@@ -15,7 +15,7 @@ public class Jugador {
     private boolean ganador;
     
     public Jugador (String nombre) {
-        this.posicionActual = 1;
+        this.posicionActual = 0;
         this.nombre = nombre;
         this.ganador = false;
     }

@@ -21,6 +21,10 @@ public class Tablero {
     private List<String> historialMovimientos;
     private int turnoActual;
 
+    public Tablero() {
+
+    }
+
     public Tablero(int tamañoTablero, int cantidadJugadores) {
         this.juego = new Object[tamañoTablero];
         this.serpientes = new ArrayList<>();
@@ -86,46 +90,48 @@ public class Tablero {
         this.turnoActual = turnoActual;
     }
 
-    /*
-         * Agrega las serpientes a el arreglo de serpientes, para agregar al tablero
-     */
-    public boolean sePuedeAgregar(Serpiente serpiente, Escalera escalera) {
-        //Para verificar si la serpiente se puede agregar o no
-        if (serpiente.getCabeza() < getJuego().length) {
-            return true;
-        } else if (serpiente.getCabeza() != escalera.getArriba() || serpiente.getCola() != escalera.getAbajo()) {
-            return true;
+    // Método para verificar el tipo de casilla
+    public int verificarCasilla(int posicion) {
+        if (posicion <= 0 || posicion > juego.length) {
+            throw new IllegalArgumentException("Posición fuera de los límites del tablero.");
         }
-        return false;
+        Object casilla = juego[posicion - 1];
+        if (casilla instanceof Serpiente) {
+            return 1;
+        } else if (casilla instanceof Escalera) {
+            return 2;
+        } else {
+            return 0;
+        }
     }
 
-    public boolean agregarSerpiente(Serpiente serpiente) {
-    int cabeza = serpiente.getCabeza();
-    int cola = serpiente.getCola();
+    /*
+     * Agrega las serpientes a el arreglo de serpientes, para agregar al tablero
+     */
+    public boolean agregarSerpiente(int cabeza, int cola) {
 
-    if (cabeza <= 0 || cola <= 0 || cabeza >= juego.length || cola >= juego.length) {
-        return false; // La cabeza o la cola están fuera de los límites del tablero.
+        if (cabeza <= 0 || cola <= 0 || cabeza >= juego.length || cola >= juego.length) {
+            return false; // La cabeza o la cola están fuera de los límites del tablero.
+        }
+
+        if (cola >= cabeza) {
+            return false; // La cola está en una posición mayor o igual a la cabeza.
+        }
+
+        if (juego[cabeza - 1] != null || juego[cola - 1] != null) {
+            return false; // La posición de la cabeza o la cola ya está ocupada.
+        }
+
+        Serpiente serpiente = new Serpiente(cabeza, cola);
+        serpientes.add(serpiente);
+        return true;
     }
-
-    if (cola >= cabeza) {
-        return false; // La cola está en una posición mayor o igual a la cabeza.
-    }
-
-    if (juego[cabeza - 1] != null || juego[cola - 1] != null) {
-        return false; // La posición de la cabeza o la cola ya está ocupada.
-    }
-
-    serpientes.add(serpiente);
-    return true;
-}
 
 
     /*
          * Agrega las escaleras a el arreglo de serpientes, para agregar al tablero
      */
-    public boolean agregarEscalera(Escalera escalera) {
-        int base = escalera.getAbajo();
-        int cima = escalera.getArriba();
+    public boolean agregarEscalera(int base, int cima) {
 
         if (base <= 0 || cima <= 0 || base >= juego.length || cima >= juego.length) {
             return false; // La base o la cima están fuera de los límites del tablero.
@@ -139,14 +145,16 @@ public class Tablero {
             return false; // La posición de la base o la cima ya está ocupada.
         }
 
+        Escalera escalera = new Escalera(cima, base);
         escaleras.add(escalera);
         return true;
     }
 
-    public void agregarJugador(Jugador jugador) {
+    public void agregarJugador(String nombre) {
         for (int i = 0; i < getJugadores().length; i++) {
             if (getJugadores()[i] == null) {
-                getJugadores()[i] = jugador;
+                Jugador j = new Jugador(nombre);
+                getJugadores()[i] = j;
                 break;
             }
         }
@@ -159,7 +167,7 @@ public class Tablero {
     public void rellenarTablero() {
         // Se rellena el tablero con las serpientes
         for (Serpiente s : getSerpientes()) {
-            getJuego()[s.getCabeza() - 1] = s; // Se coloca la serpiente en la posición de su cabeza
+            juego[s.getCabeza() - 1] = s; // Se coloca la serpiente en la posición de su cabeza
         }
         // Se rellena el tablero con las escaleras
         for (Escalera e : getEscaleras()) {
@@ -200,49 +208,51 @@ public class Tablero {
         return getDado().lanzar();
     }
 
-    public String siguienteTurno(int lanzamiento) {
-        Jugador jugadorActual = jugadores[turnoActual];
-        agregarAlHistorial("Es el turno de: " + jugadorActual.getNombre());
-        moverJugador(lanzamiento, jugadorActual);
+    public String siguienteTurno() {
         turnoActual = (turnoActual + 1) % jugadores.length;
         return ganador() != null ? "El ganador es: " + ganador() : null;
     }
 
     public void moverJugador(int lanzamiento, Jugador jugadorActual) {
         agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " ha lanzado el dado y ha obtenido " + lanzamiento);
-        // Para controlar que los movimientos nunca se pasen del tamaño máximo del tablero
         int nuevaPosicion = jugadorActual.getPosicionActual() + lanzamiento;
-        if (nuevaPosicion < getJuego().length) {
+
+        if (nuevaPosicion <= getJuego().length) {
             jugadorActual.modificarPosicion(lanzamiento);
             agregarAlHistorial("El jugador ha hecho sus movimientos, su nueva posición es: " + jugadorActual.getPosicionActual());
-        } else if (nuevaPosicion == getJuego().length) {
-            jugadorActual.modificarPosicion(lanzamiento);
-            agregarAlHistorial("El jugador ha hecho sus movimientos, su nueva posición es: " + jugadorActual.getPosicionActual());
-            jugadorActual.setGanador(true);
-            agregarAlHistorial("El jugador: " + ganador() + " ha ganado el juego");
-            //return ganador();
         } else {
             agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " no puede avanzar más y permanece en la posición " + jugadorActual.getPosicionActual());
+            return;
         }
 
-        // En esta parte se manejan los casos especiales de las serpientes y las escaleras
         Object posicion = getJuego()[jugadorActual.getPosicionActual() - 1];
         if (posicion instanceof Serpiente) {
-            agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " encontró una serpiente");
             Serpiente serpiente = (Serpiente) posicion;
+            agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " encontró una serpiente y descendió de la casilla "
+                    + serpiente.getCabeza() + " a la casilla " + serpiente.getCola());
             jugadorActual.setPosicionActual(serpiente.getCola());
-            agregarAlHistorial("El jugador retrocdedió a la casilla: " + jugadorActual.getPosicionActual());
         } else if (posicion instanceof Escalera) {
-            agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " encontró una escalera");
             Escalera escalera = (Escalera) posicion;
+            agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " encontró una escalera y ascendió de la casilla "
+                    + escalera.getAbajo() + " a la casilla " + escalera.getArriba());
             jugadorActual.setPosicionActual(escalera.getArriba());
-            agregarAlHistorial("El jugador ascendió a la casilla: " + jugadorActual.getPosicionActual());
         }
-        // da el ganador
-        //return ganador();
+
+        if (jugadorActual.getPosicionActual() == getJuego().length) {
+            jugadorActual.setGanador(true);
+            agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " ha ganado el juego");
+        }
     }
 
-    public void imprimirHistorialJuego() {
+    public String obtenerHistorialJuego() {
+        StringBuilder historial = new StringBuilder();
+        for (String movimiento : getHistorialMovimientos()) {
+            historial.append(movimiento).append("\n");
+        }
+        return historial.toString();
+    }
+
+    public void imprimirHistorialJuegoConsola() {
         System.out.println("");
         for (String elemento : getHistorialMovimientos()) {
             System.out.println(elemento);
@@ -253,7 +263,7 @@ public class Tablero {
     public void imprimirJugadores() {
         System.out.println("");
         for (int i = 0; i < getJugadores().length; i++) {
-            System.out.println(getJugadores()[i].toString());
+            System.out.println(jugadores[i].toString());
         }
     }
 }
