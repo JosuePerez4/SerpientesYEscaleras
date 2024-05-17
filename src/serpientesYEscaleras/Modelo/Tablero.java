@@ -1,16 +1,8 @@
-/*
-     * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-     * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package serpientesYEscaleras.Modelo;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author monok
- */
 public class Tablero {
 
     private Object[] juego;
@@ -21,73 +13,45 @@ public class Tablero {
     private List<String> historialMovimientos;
     private int turnoActual;
 
-    public Tablero() {
-
-    }
-
     public Tablero(int tamañoTablero, int cantidadJugadores) {
+        if (tamañoTablero <= 0 || cantidadJugadores <= 0) {
+            throw new IllegalArgumentException("El tamaño del tablero y la cantidad de jugadores deben ser mayores a 0.");
+        }
         this.juego = new Object[tamañoTablero];
         this.serpientes = new ArrayList<>();
         this.escaleras = new ArrayList<>();
         this.jugadores = new Jugador[cantidadJugadores];
         this.dado = new Dado();
         this.historialMovimientos = new ArrayList<>();
+        this.turnoActual = 0;  // Inicializar el turno actual
     }
 
     public Object[] getJuego() {
         return juego;
     }
 
-    public void setJuego(Object[] juego) {
-        this.juego = juego;
-    }
-
     public List<Serpiente> getSerpientes() {
         return serpientes;
-    }
-
-    public void setSerpientes(List<Serpiente> serpientes) {
-        this.serpientes = serpientes;
     }
 
     public List<Escalera> getEscaleras() {
         return escaleras;
     }
 
-    public void setEscaleras(List<Escalera> escaleras) {
-        this.escaleras = escaleras;
-    }
-
     public Jugador[] getJugadores() {
         return jugadores;
-    }
-
-    public void setJugadores(Jugador[] jugadores) {
-        this.jugadores = jugadores;
     }
 
     public Dado getDado() {
         return dado;
     }
 
-    public void setDado(Dado dado) {
-        this.dado = dado;
-    }
-
     public List<String> getHistorialMovimientos() {
         return historialMovimientos;
     }
 
-    public void setHistorialMovimientos(List<String> historialMovimientos) {
-        this.historialMovimientos = historialMovimientos;
-    }
-
     public int getTurnoActual() {
         return turnoActual;
-    }
-
-    public void setTurnoActual(int turnoActual) {
-        this.turnoActual = turnoActual;
     }
 
     // Método para verificar el tipo de casilla
@@ -105,107 +69,83 @@ public class Tablero {
         }
     }
 
-    /*
-     * Agrega las serpientes a el arreglo de serpientes, para agregar al tablero
-     */
     public boolean agregarSerpiente(int cabeza, int cola) {
-
         if (cabeza <= 0 || cola <= 0 || cabeza >= juego.length || cola >= juego.length) {
-            return false; // La cabeza o la cola están fuera de los límites del tablero.
+            return false;
         }
-
         if (cola >= cabeza) {
-            return false; // La cola está en una posición mayor o igual a la cabeza.
+            return false;
         }
-
         if (juego[cabeza - 1] != null || juego[cola - 1] != null) {
-            return false; // La posición de la cabeza o la cola ya está ocupada.
+            return false;
         }
-
         Serpiente serpiente = new Serpiente(cabeza, cola);
         serpientes.add(serpiente);
+        juego[cabeza - 1] = serpiente;
         return true;
     }
 
-
-    /*
-         * Agrega las escaleras a el arreglo de serpientes, para agregar al tablero
-     */
     public boolean agregarEscalera(int base, int cima) {
-
         if (base <= 0 || cima <= 0 || base >= juego.length || cima >= juego.length) {
-            return false; // La base o la cima están fuera de los límites del tablero.
+            return false;
         }
-
         if (base >= cima) {
-            return false; // La cima está en una posición menor o igual a la base.
+            return false;
         }
-
         if (juego[base - 1] != null || juego[cima - 1] != null) {
-            return false; // La posición de la base o la cima ya está ocupada.
+            return false;
         }
-
         Escalera escalera = new Escalera(cima, base);
         escaleras.add(escalera);
+        juego[base - 1] = escalera;
         return true;
     }
 
     public void agregarJugador(String nombre) {
-        for (int i = 0; i < getJugadores().length; i++) {
-            if (getJugadores()[i] == null) {
+        for (int i = 0; i < jugadores.length; i++) {
+            if (jugadores[i] == null) {
                 Jugador j = new Jugador(nombre);
-                getJugadores()[i] = j;
+                jugadores[i] = j;
                 break;
             }
         }
     }
 
     public void agregarAlHistorial(String movimiento) {
-        getHistorialMovimientos().add(movimiento);
+        historialMovimientos.add(movimiento);
     }
 
     public void rellenarTablero() {
-        // Se rellena el tablero con las serpientes
-        for (Serpiente s : getSerpientes()) {
-            juego[s.getCabeza() - 1] = s; // Se coloca la serpiente en la posición de su cabeza
-        }
-        // Se rellena el tablero con las escaleras
-        for (Escalera e : getEscaleras()) {
-            getJuego()[e.getAbajo() - 1] = e; // Se coloca la escalera en la posición de su escalón inferior
-        }
-        // Se rellena el resto del tablero
-        for (int i = 0; i < getJuego().length; i++) {
-            if (getJuego()[i] == null) {
-                getJuego()[i] = i + 1; // Se agrega cada número
+        for (int i = 0; i < juego.length; i++) {
+            if (juego[i] == null) {
+                juego[i] = i + 1;
             }
         }
     }
 
     public void imprimirTablero() {
-        for (int i = 0; i < getJuego().length; i++) {
-            if (getJuego()[i] instanceof Serpiente) {
+        for (int i = 0; i < juego.length; i++) {
+            if (juego[i] instanceof Serpiente) {
                 System.out.print("S ");
-            } else if (getJuego()[i] instanceof Escalera) {
+            } else if (juego[i] instanceof Escalera) {
                 System.out.print("E ");
             } else {
-                System.out.print(getJuego()[i] + " ");
+                System.out.print(juego[i] + " ");
             }
         }
     }
 
     public String ganador() {
-        String s = null;
-        for (int i = 0; i < getJugadores().length; i++) {
-            if (getJugadores()[i].isGanador()) {
-                s = getJugadores()[i].getNombre();
-                return s;
+        for (Jugador jugador : jugadores) {
+            if (jugador != null && jugador.isGanador()) {
+                return jugador.getNombre();
             }
         }
-        return s;
+        return null;
     }
 
     public int realizarLanzamiento() {
-        return getDado().lanzar();
+        return dado.lanzar();
     }
 
     public String siguienteTurno() {
@@ -214,10 +154,13 @@ public class Tablero {
     }
 
     public void moverJugador(int lanzamiento, Jugador jugadorActual) {
+        if (jugadorActual == null) {
+            return;
+        }
         agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " ha lanzado el dado y ha obtenido " + lanzamiento);
         int nuevaPosicion = jugadorActual.getPosicionActual() + lanzamiento;
 
-        if (nuevaPosicion <= getJuego().length) {
+        if (nuevaPosicion <= juego.length) {
             jugadorActual.modificarPosicion(lanzamiento);
             agregarAlHistorial("El jugador ha hecho sus movimientos, su nueva posición es: " + jugadorActual.getPosicionActual());
         } else {
@@ -225,7 +168,7 @@ public class Tablero {
             return;
         }
 
-        Object posicion = getJuego()[jugadorActual.getPosicionActual() - 1];
+        Object posicion = juego[jugadorActual.getPosicionActual() - 1];
         if (posicion instanceof Serpiente) {
             Serpiente serpiente = (Serpiente) posicion;
             agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " encontró una serpiente y descendió de la casilla "
@@ -238,7 +181,7 @@ public class Tablero {
             jugadorActual.setPosicionActual(escalera.getArriba());
         }
 
-        if (jugadorActual.getPosicionActual() == getJuego().length) {
+        if (jugadorActual.getPosicionActual() == juego.length) {
             jugadorActual.setGanador(true);
             agregarAlHistorial("El jugador " + jugadorActual.getNombre() + " ha ganado el juego");
         }
@@ -246,7 +189,7 @@ public class Tablero {
 
     public String obtenerHistorialJuego() {
         StringBuilder historial = new StringBuilder();
-        for (String movimiento : getHistorialMovimientos()) {
+        for (String movimiento : historialMovimientos) {
             historial.append(movimiento).append("\n");
         }
         return historial.toString();
@@ -254,7 +197,7 @@ public class Tablero {
 
     public void imprimirHistorialJuegoConsola() {
         System.out.println("");
-        for (String elemento : getHistorialMovimientos()) {
+        for (String elemento : historialMovimientos) {
             System.out.println(elemento);
             System.out.println("");
         }
@@ -262,8 +205,14 @@ public class Tablero {
 
     public void imprimirJugadores() {
         System.out.println("");
-        for (int i = 0; i < getJugadores().length; i++) {
-            System.out.println(jugadores[i].toString());
+        for (Jugador jugador : jugadores) {
+            if (jugador != null) {
+                System.out.println(jugador.toString());
+            }
         }
+    }
+
+    public int getDimension() {
+        return getJuego().length;
     }
 }

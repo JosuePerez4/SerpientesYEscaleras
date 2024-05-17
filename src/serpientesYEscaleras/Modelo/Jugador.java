@@ -13,9 +13,15 @@ public class Jugador {
     private int posicionActual;
     private String nombre;
     private boolean ganador;
-    
-    public Jugador (String nombre) {
+
+    public Jugador(String nombre) {
         this.posicionActual = 0;
+        this.nombre = nombre;
+        this.ganador = false;
+    }
+
+    public Jugador(int posicion) {
+        this.posicionActual = posicion;
         this.nombre = nombre;
         this.ganador = false;
     }
@@ -37,7 +43,7 @@ public class Jugador {
     }
 
     public void modificarPosicion(int movimiento) {
-        setPosicionActual(getPosicionActual()+movimiento);
+        setPosicionActual(getPosicionActual() + movimiento);
     }
 
     public boolean isGanador() {

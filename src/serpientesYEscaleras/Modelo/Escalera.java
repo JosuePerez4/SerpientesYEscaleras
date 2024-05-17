@@ -11,7 +11,7 @@ public class Escalera {
     public Escalera(int arriba, int abajo) {
         this.arriba = arriba;
         this.abajo = abajo;
-        this.icon = escalarImagen(new ImageIcon("C:\\Users\\monok\\Documents\\NetBeansProjects\\Serpientes y escaleras\\src\\Imagenes\\ladder.png"));
+        this.icon = escalarImagen(new ImageIcon(getClass().getResource("/Imagenes/ladder.png")));
     }
 
     public int getArriba() {

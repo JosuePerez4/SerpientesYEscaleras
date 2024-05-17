@@ -12,7 +12,7 @@ public class Serpiente {
     public Serpiente(int cabeza, int cola) {
         this.cabeza = cabeza;
         this.cola = cola;
-        this.icon = escalarImagen(new ImageIcon("C:\\Users\\monok\\Documents\\NetBeansProjects\\Serpientes y escaleras\\src\\Imagenes\\snake.png"));
+        this.icon = escalarImagen(new ImageIcon(getClass().getResource("/Imagenes/snake.png")));
     }
 
     public int getCabeza() {

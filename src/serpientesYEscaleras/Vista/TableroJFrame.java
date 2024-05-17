@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import serpientesYEscaleras.Modelo.Escalera;
 import serpientesYEscaleras.Modelo.Serpiente;
 import serpientesYEscaleras.Modelo.Tablero;
@@ -16,27 +17,34 @@ public class TableroJFrame extends JFrame {
     private JTextArea historialTextArea;
     private JScrollPane historialScrollPane;
     private Tablero tablero;
-    private JLabel[][] casillas;
-    private JLabel[] jugadoresLabels;
-    private ImageIcon[] fichasJugadores;
+    private JPanel[][] casillas;
     private boolean juegoTerminado;
+    private int turno;
+
+    private JLabel turnoContadorLabel;
+    private JLabel jugadorTurnoLabel;
+    private JLabel rondaLabel;
+
+    private JPanel[] fichasJugadores;
+    private Color[] coloresFichas = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW};
 
     public TableroJFrame(int filas, int columnas, Tablero tablero) {
         super("Tablero");
 
         this.tablero = tablero;
-        this.casillas = new JLabel[filas][columnas];
-        this.jugadoresLabels = new JLabel[tablero.getJugadores().length];
-        this.fichasJugadores = new ImageIcon[tablero.getJugadores().length];
+        this.casillas = new JPanel[filas][columnas];
         this.juegoTerminado = false;
+        this.turno = 0;
         tablero.rellenarTablero();
 
-        // Configuración del JFrame
+        turnoContadorLabel = new JLabel("Turno: 0");
+        jugadorTurnoLabel = new JLabel("Turno del Jugador: ");
+        rondaLabel = new JLabel("Ronda: 0");
+
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(800, 600);
         setLocationRelativeTo(null);
 
-        // Crear el panel del tablero
         tableroPanel = new JPanel(new GridLayout(filas, columnas));
         tableroPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         tableroPanel.setBackground(new Color(220, 220, 220));
@@ -51,35 +59,43 @@ public class TableroJFrame extends JFrame {
                     numeroCasilla = ((fila + 1) * columnas) - columna;
                 }
 
-                JLabel casilla = new JLabel("", SwingConstants.CENTER);
-                casilla.setPreferredSize(new Dimension(50, 50));
-                casilla.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                JPanel casillaPanel = new JPanel(new BorderLayout());
+                casillaPanel.setPreferredSize(new Dimension(50, 50));
+                casillaPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
                 if (fila % 2 == 0) {
-                    casilla.setBackground(new Color(173, 216, 230));
+                    casillaPanel.setBackground(new Color(173, 216, 230));
                 } else {
-                    casilla.setBackground(new Color(255, 193, 128));
+                    casillaPanel.setBackground(new Color(255, 193, 128));
                 }
 
                 Object objeto = tablero.getJuego()[numeroCasilla - 1];
                 if (objeto instanceof Serpiente) {
-                    casilla.setIcon((ImageIcon) ((Serpiente) objeto).getIcon());
-                    casilla.setOpaque(true); // Asegurarse de que la imagen no sea opacada
+                    ImageIcon icono = ((Serpiente) objeto).getIcon();
+                    JLabel imagenLabel = new JLabel(escalarImagen(icono));
+                    imagenLabel.setVerticalAlignment(SwingConstants.CENTER);
+                    imagenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                    casillaPanel.add(imagenLabel, BorderLayout.CENTER);
                 } else if (objeto instanceof Escalera) {
-                    casilla.setIcon((ImageIcon) ((Escalera) objeto).getIcon());
-                    casilla.setOpaque(true);
+                    ImageIcon icono = ((Escalera) objeto).getIcon();
+                    JLabel imagenLabel = new JLabel(escalarImagen(icono));
+                    imagenLabel.setVerticalAlignment(SwingConstants.CENTER);
+                    imagenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                    casillaPanel.add(imagenLabel, BorderLayout.CENTER);
                 } else {
-                    casilla.setText(String.valueOf(numeroCasilla));
-                    casilla.setOpaque(true);
+                    JLabel numeroLabel = new JLabel(String.valueOf(numeroCasilla), SwingConstants.CENTER);
+                    numeroLabel.setVerticalAlignment(SwingConstants.CENTER);
+                    numeroLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                    casillaPanel.add(numeroLabel, BorderLayout.CENTER);
                 }
 
-                casillas[fila][columna] = casilla;
-                tableroPanel.add(casilla);
+                casillas[fila][columna] = casillaPanel;
+                tableroPanel.add(casillaPanel);
             }
         }
 
         // Crear el botón para la imagen del dado
-        ImageIcon dadoIcon = escalarImagen(new ImageIcon("C:\\Users\\monok\\Documents\\NetBeansProjects\\Serpientes y escaleras\\src\\Imagenes\\Dice.png"));
+        ImageIcon dadoIcon = escalarImagen(new ImageIcon(getClass().getResource("/Imagenes/Dice.png")));
         dadoButton = new JButton(dadoIcon);
 
         dadoButton.setPreferredSize(new Dimension(dadoIcon.getIconWidth(), dadoIcon.getIconHeight()));
@@ -90,13 +106,13 @@ public class TableroJFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 realizarMovimientoJugador();
+                turno++;
             }
         });
 
         // Crear el botón para mostrar el historial
         historialButton = new JButton("Mostrar Historial");
-        historialButton.setEnabled(false); // Se habilita solo cuando el juego termina
-
+        historialButton.setEnabled(false);
         historialButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -114,23 +130,89 @@ public class TableroJFrame extends JFrame {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         buttonPanel.add(Box.createVerticalGlue());
-        buttonPanel.add(dadoButton);
-        buttonPanel.add(Box.createRigidArea(new Dimension(0, 20))); // Espacio entre botones
+
+        buttonPanel.add(turnoContadorLabel);
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        buttonPanel.add(jugadorTurnoLabel);
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        buttonPanel.add(rondaLabel);
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        buttonPanel.add(dadoButton); // Agregar la etiqueta del dado al panel de botones
+
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 20)));
         buttonPanel.add(historialButton);
         buttonPanel.add(Box.createVerticalGlue());
 
         add(buttonPanel, BorderLayout.EAST);
-        add(historialScrollPane, BorderLayout.SOUTH); // Agregar el área de texto con el historial en la parte inferior
+        add(historialScrollPane, BorderLayout.SOUTH);
 
-        // Inicializar las fichas de los jugadores
+        fichasJugadores = new JPanel[tablero.getJugadores().length];
         for (int i = 0; i < tablero.getJugadores().length; i++) {
-            fichasJugadores[i] = escalarImagen(new ImageIcon("C:\\Users\\monok\\Documents\\NetBeansProjects\\Serpientes y escaleras\\src\\Imagenes\\ficha.png")); // Ajusta la ruta
-            jugadoresLabels[i] = new JLabel(fichasJugadores[i]);
-            jugadoresLabels[i].setPreferredSize(new Dimension(50, 50));
-            casillas[0][0].add(jugadoresLabels[i]); // Poner las fichas en la casilla inicial
+            fichasJugadores[i] = new JPanel();
+            fichasJugadores[i].setBackground(coloresFichas[i]);
+            fichasJugadores[i].setPreferredSize(new Dimension(20, 20));
+            casillas[0][0].add(fichasJugadores[i]);
             casillas[0][0].revalidate();
             casillas[0][0].repaint();
         }
+    }
+
+    private void realizarMovimientoJugador() {
+        int jugadorActual = tablero.getTurnoActual();
+        int lanzamiento = tablero.realizarLanzamiento();
+        moverFichaJugador(jugadorActual, lanzamiento);
+        ImageIcon dadoIcon = escalarImagen(new ImageIcon(dadoFase(lanzamiento)));
+        dadoButton.setIcon(dadoIcon);
+        actualizarEtiquetas();
+    }
+
+    private void moverFichaJugador(int jugador, int lanzamiento) {
+        int posicionActual = tablero.getJugadores()[jugador].getPosicionActual();
+        tablero.moverJugador(lanzamiento, tablero.getJugadores()[jugador]);
+        int nuevaPosicion = tablero.getJugadores()[jugador].getPosicionActual();
+        actualizarFichaEnInterfaz(jugador, posicionActual, nuevaPosicion);
+
+        if (tablero.getJugadores()[jugador].isGanador()) {
+            juegoTerminado = true;
+            dadoButton.setEnabled(false);
+            historialButton.setEnabled(true);
+            mostrarMensajeGanador(tablero.getJugadores()[jugador].getNombre());
+        } else {
+            tablero.siguienteTurno();
+        }
+    }
+
+    private void actualizarFichaEnInterfaz(int jugador, int posicionAnterior, int nuevaPosicion) {
+        int filaAnterior = (posicionAnterior - 1) / 10;
+        int columnaAnterior = (posicionAnterior % 10);
+
+        int filaNueva = (nuevaPosicion - 1) / 10;
+        int columnaNueva = (nuevaPosicion - 1) % 10;
+
+        // Restaurar el fondo original de la casilla anterior
+        JPanel casillaAnterior = casillas[filaAnterior][columnaAnterior];
+        if (filaAnterior % 2 == 0) {
+            casillaAnterior.setBackground(new Color(173, 216, 230));
+        } else {
+            casillaAnterior.setBackground(new Color(255, 193, 128));
+        }
+
+        // Eliminar la ficha del jugador de la casilla anterior
+        casillaAnterior.remove(fichasJugadores[jugador]);
+        casillaAnterior.revalidate();
+        casillaAnterior.repaint();
+
+        // Agregar la ficha del jugador a la nueva casilla
+        JPanel nuevaCasilla = casillas[filaNueva][columnaNueva];
+        nuevaCasilla.add(fichasJugadores[jugador]);
+        nuevaCasilla.revalidate();
+        nuevaCasilla.repaint();
+    }
+
+    private void mostrarMensajeGanador(String nombreJugador) {
+        String mensaje = "¡El jugador " + nombreJugador + " ha ganado el juego!";
+        JOptionPane.showMessageDialog(this, mensaje, "Juego terminado", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private ImageIcon escalarImagen(ImageIcon icon) {
@@ -139,66 +221,25 @@ public class TableroJFrame extends JFrame {
         return new ImageIcon(newImg);
     }
 
-    private void realizarMovimientoJugador() {
-        if (juegoTerminado) {
-            return;
-        }
-        int jugadorActual = tablero.getTurnoActual();
-        int lanzamiento = tablero.realizarLanzamiento();
-        System.out.println("Turno del jugador: " + tablero.getJugadores()[jugadorActual].getNombre());
-        System.out.println("Lanzamiento del dado: " + lanzamiento);
-        moverFichaJugador(jugadorActual, lanzamiento);
+    private void actualizarEtiquetas() {
+        turnoContadorLabel.setText("Turno: " + turno);
+        jugadorTurnoLabel.setText("Turno del Jugador: " + tablero.getJugadores()[tablero.getTurnoActual()].getNombre());
+        rondaLabel.setText("Ronda: " + (turno / tablero.getJugadores().length));
     }
 
-    private void moverFichaJugador(int jugador, int lanzamiento) {
-        int posicionActual = tablero.getJugadores()[jugador].getPosicionActual();
-        System.out.println("Posición actual del jugador: " + posicionActual);
-        tablero.moverJugador(lanzamiento, tablero.getJugadores()[jugador]);
-        int nuevaPosicion = tablero.getJugadores()[jugador].getPosicionActual();
-        System.out.println("Nueva posición del jugador: " + nuevaPosicion);
-
-        // Actualizar la posición de la ficha en la interfaz gráfica
-        actualizarFichaEnInterfaz(jugador, posicionActual, nuevaPosicion);
-
-        // Verificar si el jugador ha ganado
-        if (tablero.getJugadores()[jugador].isGanador()) {
-            System.out.println("¡El jugador " + tablero.getJugadores()[jugador].getNombre() + " ha ganado el juego!");
-            mostrarMensajeGanador(tablero.getJugadores()[jugador].getNombre(), lanzamiento, posicionActual, nuevaPosicion);
-            juegoTerminado = true;
-            dadoButton.setEnabled(false);
-            historialButton.setEnabled(true); // Habilitar el botón de historial al terminar el juego
+    private URL dadoFase(int lanzamiento) {
+        if (lanzamiento == 1) {
+            return getClass().getResource("/Imagenes//dadoFases/dadoFases1.png");
+        } else if (lanzamiento == 2) {
+            return getClass().getResource("/Imagenes//dadoFases/dadoFases2.png");
+        } else if (lanzamiento == 3) {
+            return getClass().getResource("/Imagenes//dadoFases/dadoFases3.png");
+        } else if (lanzamiento == 4) {
+            return getClass().getResource("/Imagenes//dadoFases/dadoFases4.png");
+        } else if (lanzamiento == 5) {
+            return getClass().getResource("/Imagenes//dadoFases/dadoFases5.png");
         } else {
-            tablero.siguienteTurno(); // Mover al siguiente turno sin mover al jugador
+            return getClass().getResource("/Imagenes//dadoFases/dadoFases6.png");
         }
-    }
-
-    private void actualizarFichaEnInterfaz(int jugador, int posicionAnterior, int nuevaPosicion) {
-        int filaAnterior = (posicionAnterior - 1) / 10;
-        int columnaAnterior = (posicionAnterior - 1) % 10;
-
-        if (posicionAnterior > 0) {
-            casillas[filaAnterior][columnaAnterior].remove(jugadoresLabels[jugador]);
-            casillas[filaAnterior][columnaAnterior].revalidate();
-            casillas[filaAnterior][columnaAnterior].repaint();
-        } else {
-            casillas[0][0].remove(jugadoresLabels[jugador]);
-            casillas[0][0].revalidate();
-            casillas[0][0].repaint();
-        }
-
-        int filaNueva = (nuevaPosicion - 1) / 10;
-        int columnaNueva = (nuevaPosicion - 1) % 10;
-
-        casillas[filaNueva][columnaNueva].add(jugadoresLabels[jugador]);
-        casillas[filaNueva][columnaNueva].revalidate();
-        casillas[filaNueva][columnaNueva].repaint();
-    }
-
-    private void mostrarMensajeGanador(String nombreJugador, int lanzamiento, int posicionAnterior, int nuevaPosicion) {
-        String mensaje = "¡El jugador " + nombreJugador + " ha ganado el juego!\n\n"
-                + "Lanzamiento del dado: " + lanzamiento + "\n"
-                + "Posición anterior: " + posicionAnterior + "\n"
-                + "Nueva posición: " + nuevaPosicion;
-        JOptionPane.showMessageDialog(this, mensaje, "Juego terminado", JOptionPane.INFORMATION_MESSAGE);
     }
 }
